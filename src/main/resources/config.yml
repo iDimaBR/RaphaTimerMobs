@@ -1,0 +1,50 @@
+#######################################
+#                                     #
+#     RaphaTimerMobs by iDimaBR       #
+#                                     #
+#######################################
+#
+# AVISO: Não coloque os mesmos numeros em "ID"
+#
+# Attributos:
+#   damage - Dano aplicado
+#   range - Detecção de jogadores em volta
+#   speed - Altera sua velocidade
+#   health - Altera sua vida
+#   knock - Resistência ao knockback
+#
+
+Entities:
+  Example:
+    ID: 1
+    Type: SPIDER
+    Name: "&cExample"
+    Timer: 5
+    ForceHostile: true
+    Attributes:
+      Damage:
+        Type: "damage"
+        Value: 6.0
+      Range:
+        Type: "range"
+        Value: 20.0
+      Speed:
+        Type: "speed"
+        Value: 0.3
+      Health:
+        Type: "health"
+        Value: 100.0
+      Knock:
+        Type: "knock"
+        Value: 0.3
+    Drops:
+      DropExample:
+        Chance: 80
+        Amount: 1
+        Material: DIRT
+        Name: "&cExample"
+        Lore:
+          - "&7This is a example"
+        Enchantments:
+          - "DAMAGE_ALL;5"
+    Location: {}

@@ -1,0 +1,7 @@
+name: RaphaTimerMobs
+version: '${project.version}'
+main: com.github.idimabr.RaphaTimerMobs
+prefix: RaphaTimerMobs
+authors: [ iDimaBR ]
+commands:
+  timermobs:
