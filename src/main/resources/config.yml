@@ -42,6 +42,7 @@ Entities:
         Chance: 80
         Amount: 1
         Material: DIRT
+        Glow: true
         Name: "&cExample"
         Lore:
           - "&7This is a example"

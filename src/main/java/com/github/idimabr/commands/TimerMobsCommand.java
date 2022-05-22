@@ -3,6 +3,7 @@ package com.github.idimabr.commands;
 import com.github.idimabr.RaphaTimerMobs;
 import com.github.idimabr.manager.TimerManager;
 import com.github.idimabr.utils.ConfigUtil;
+import com.github.idimabr.utils.ModifyUtil;
 import org.apache.commons.lang.RandomStringUtils;
 import org.apache.commons.lang.StringUtils;
 import org.bukkit.Location;
@@ -14,6 +15,8 @@ import org.bukkit.entity.EntityType;
 import org.bukkit.entity.Player;
 
 import java.util.Arrays;
+import java.util.List;
+import java.util.stream.Collectors;
 
 public class TimerMobsCommand implements CommandExecutor {
 
@@ -63,7 +66,7 @@ public class TimerMobsCommand implements CommandExecutor {
         }else if(args.length == 4 && args[0].equalsIgnoreCase("criar")) {
 
             final String keyEntity = args[1];
-            final String typeString = args[2];
+            final String typeString = args[2].toUpperCase();
             final Location location = player.getLocation();
 
             if (config.isSet("Entities." + keyEntity)) {
@@ -71,16 +74,29 @@ public class TimerMobsCommand implements CommandExecutor {
                 return false;
             }
 
+            List<EntityType> availables = Arrays.stream(EntityType.values())
+                    .filter($ -> $.isAlive() && $.isSpawnable() &&
+                            !$.equals(EntityType.PLAYER) &&
+                            !$.equals(EntityType.SQUID) &&
+                            !$.equals(EntityType.GHAST) &&
+                            !$.equals(EntityType.SLIME)
+                    ).collect(Collectors.toList());
+
             if (!isValidType(typeString)) {
                 player.sendMessage("§cEntidade '" + typeString + "' não é válida!");
+                player.sendMessage("§aEntidades disponíveis: §f" + StringUtils.join(availables, ", "));
+                return false;
+            }
+
+            if(!availables.contains(EntityType.valueOf(typeString))){
+                player.sendMessage("§cEntidade '" + typeString + "' não é válida para modificações!");
+                player.sendMessage("§aEntidades disponíveis: §f" + StringUtils.join(availables, ", "));
                 return false;
             }
 
             final int timer = Integer.parseInt(args[3]);
-
             final ConfigurationSection mainSection = config.createSection("Entities." + keyEntity);
-
-            int id = Integer.parseInt(RandomStringUtils.randomNumeric(4));
+            final int id = Integer.parseInt(RandomStringUtils.randomNumeric(4));
 
             mainSection.set("ID", id);
             mainSection.set("Type", typeString.toUpperCase());
@@ -109,9 +125,23 @@ public class TimerMobsCommand implements CommandExecutor {
             player.sendMessage("§aA configuração do '" + keyEntity + "' foi gerada!");
             player.sendMessage("§7Obs: Será necessário utilizar /timermobs reload");
             return false;
-        }else if(args.length == 1 && args[0].equalsIgnoreCase("reload")){
+        }else if(args.length == 2 && args[0].equalsIgnoreCase("deletar")) {
+            final String keyEntity = args[1];
+            if (!config.isSet("Entities." + keyEntity)) {
+                player.sendMessage("§cA entidade '" + keyEntity + "' não existe na configuração.");
+                return false;
+            }
+
+            int id = config.getInt("Entities." + keyEntity + ".ID");
+            ModifyUtil.removeCreaturesFromWorld(id, player.getWorld());
+            TimerManager.getTimerList().remove(id);
+
+            config.set("Entities." + keyEntity, null);
             config.saveConfig();
-            config.reloadConfig();
+            player.sendMessage("§aA entidade '" + keyEntity + "' foi deletada da configuração.");
+            return false;
+        }else if(args.length == 1 && args[0].equalsIgnoreCase("reload")) {
+            config.saveConfig();
             int loaded = TimerManager.loadTimerMobs();
             int totalEntities = config.getConfigurationSection("Entities").getKeys(false).size();
             player.sendMessage(" ");
@@ -119,11 +149,18 @@ public class TimerMobsCommand implements CommandExecutor {
             player.sendMessage("§aForam carregadas §f" + loaded + " §ade §f" + totalEntities + " §aentidades!");
             player.sendMessage(" ");
             return false;
+        }else if(args.length == 1 && args[0].equalsIgnoreCase("list")){
+            player.sendMessage("§aCriaturas criadas: §f" + StringUtils.join(config.getConfigurationSection("Entities").getKeys(false), ", "));
+            return false;
         }else{
             player.sendMessage("§cCOMANDOS:");
             player.sendMessage("§c");
             player.sendMessage("§c /timermobs definir <mob>");
-            player.sendMessage("§c /timermob criar <name> <mobType> <timer>");
+            player.sendMessage("§c /timermobs criar <name> <mobType> <timer>");
+            player.sendMessage("§c /timermobs deletar <name>");
+            player.sendMessage("§c /timermobs list");
+            player.sendMessage("§c /timermobs reload");
+
             return false;
         }
     }

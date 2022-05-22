@@ -47,33 +47,33 @@ public class TimerManager {
         for (String key : mainSection.getKeys(false)) {
             ConfigurationSection entitySection = mainSection.getConfigurationSection(key);
 
-            int id = entitySection.getInt("ID");
-            int timer = entitySection.getInt("Timer");
-            boolean hostile = entitySection.getBoolean("ForceHostile");
-            EntityType type = EntityType.valueOf(entitySection.getString("Type"));
-            Location location = config.getLocation(mainSection.getCurrentPath() + "." + key + ".Location");
+            final int id = entitySection.getInt("ID");
+            final int timer = entitySection.getInt("Timer");
+            final boolean hostile = entitySection.getBoolean("ForceHostile");
+            final EntityType type = EntityType.valueOf(entitySection.getString("Type"));
+            final Location location = config.getLocation(mainSection.getCurrentPath() + "." + key + ".Location");
             if(location == null) continue;
 
-            removeCreatures(location.getWorld());
+            ModifyUtil.removeCreaturesFromWorld(id, location.getWorld());
 
-            List<Pair<String, Double>> attributes = Lists.newArrayList();
-            ConfigurationSection attributeMainSection = entitySection.getConfigurationSection("Attributes");
+            final List<Pair<String, Double>> attributes = Lists.newArrayList();
+            final ConfigurationSection attributeMainSection = entitySection.getConfigurationSection("Attributes");
             for (String attributeKey : attributeMainSection.getKeys(false)) {
 
-                String attributeType = attributeMainSection.getString(attributeKey + ".Type");
-                double attributeValue = attributeMainSection.getDouble(attributeKey + ".Value");
+                final String attributeType = attributeMainSection.getString(attributeKey + ".Type");
+                final double attributeValue = attributeMainSection.getDouble(attributeKey + ".Value");
 
                 attributes.add(Pair.of(attributeType, attributeValue));
             }
 
-            List<Pair<Integer, ItemStack>> drops = Lists.newArrayList();
-            ConfigurationSection dropsMainSection = entitySection.getConfigurationSection("Drops");
+            final List<Pair<Integer, ItemStack>> drops = Lists.newArrayList();
+            final ConfigurationSection dropsMainSection = entitySection.getConfigurationSection("Drops");
             for (String dropKey : dropsMainSection.getKeys(false)) {
-                ConfigurationSection dropsSection = dropsMainSection.getConfigurationSection(dropKey);
+                final ConfigurationSection dropsSection = dropsMainSection.getConfigurationSection(dropKey);
 
-                int chance = dropsSection.getInt("Chance");
+                final int chance = dropsSection.getInt("Chance");
 
-                Material material = Material.getMaterial(dropsSection.getString("Material"));
+                final Material material = Material.getMaterial(dropsSection.getString("Material"));
                 if(material == null) continue;
 
                 ItemBuilder builder = new ItemBuilder(material);
@@ -87,6 +87,9 @@ public class TimerManager {
                 if(dropsSection.contains("Name"))
                     builder.setName(dropsSection.getString("Name").replace("&","§"));
 
+                if(dropsSection.contains("Glow") && dropsSection.getBoolean("Glow"))
+                    builder.addGlow();
+
                 if(dropsSection.contains("Lore"))
                     builder.setLore(dropsSection.getStringList("Lore").stream().map($ -> $.replace("&","§")).collect(Collectors.toList()));
 
@@ -94,10 +97,10 @@ public class TimerManager {
                     for (String valueEnchant : dropsSection.getStringList("Enchantments")) {
                         if(!valueEnchant.contains(";")) continue;
 
-                        String nameEnchant = valueEnchant.split(";")[0];
-                        int levelEnchant = Integer.parseInt(valueEnchant.split(";")[1]);
+                        final String nameEnchant = valueEnchant.split(";")[0];
+                        final int levelEnchant = Integer.parseInt(valueEnchant.split(";")[1]);
 
-                        Enchantment ench = Enchantment.getByName(nameEnchant);
+                        final Enchantment ench = Enchantment.getByName(nameEnchant);
                         if(ench == null) continue;
 
                         builder.addUnsafeEnchantment(ench, levelEnchant);
@@ -106,12 +109,12 @@ public class TimerManager {
                 drops.add(Pair.of(chance, builder.toItemStack()));
             }
 
-            Entity entity = ModifyUtil.spawnEntityWithAttributes(id, hostile, type, location, attributes);
+            final Entity entity = ModifyUtil.spawnEntityWithAttributes(id, hostile, type, location, attributes);
             if(entity instanceof LivingEntity)
                 ((LivingEntity) entity).setRemoveWhenFarAway(false);
 
-            if(entitySection.isSet("Name")) {
-                String name = entitySection.getString("Name").replace("&","§");
+            if(entitySection.contains("Name")) {
+                final String name = entitySection.getString("Name").replace("&","§");
                 entity.setCustomNameVisible(true);
                 entity.setCustomName(name);
                 BACKUP.put(id, new BackupEntity(id, hostile, name, type, location, timer, attributes, drops));
@@ -125,12 +128,5 @@ public class TimerManager {
 
         System.out.println("Foram carregadas " + numberEntities + " entidades");
         return numberEntities;
-    }
-
-    private static void removeCreatures(World world){
-        world.getLivingEntities().forEach($ -> {
-            if($.hasMetadata("id"))
-                $.remove();
-        });
     }
 }
